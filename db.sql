@@ -1,0 +1,155 @@
+-- Movie Ticket Booking System - Clean Schema and Seed Data
+-- Tested with MySQL 8.x
+DROP DATABASE IF EXISTS movie_db;
+CREATE DATABASE movie_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE movie_db;
+
+-- Users (customers)
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Admin users
+CREATE TABLE admin_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Movies
+CREATE TABLE movies (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  language VARCHAR(50) DEFAULT 'English',
+  genre VARCHAR(80) DEFAULT 'Drama',
+  duration_mins INT DEFAULT 120,
+  rating VARCHAR(10) DEFAULT 'UA',
+  poster_url VARCHAR(400),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Screens (auditoriums) - fixed column names
+CREATE TABLE screens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  total_rows INT NOT NULL DEFAULT 6,
+  total_cols INT NOT NULL DEFAULT 10,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seats (linked to screen)
+CREATE TABLE seats (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  screen_id INT NOT NULL,
+  seat_row CHAR(1) NOT NULL,
+  seat_col INT NOT NULL,
+  seat_label VARCHAR(10) GENERATED ALWAYS AS (CONCAT(seat_row, seat_col)) STORED,
+  FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE CASCADE,
+  UNIQUE KEY screen_seat_unique (screen_id, seat_row, seat_col)
+) ENGINE=InnoDB;
+
+-- Shows
+CREATE TABLE shows (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  movie_id INT NOT NULL,
+  screen_id INT NOT NULL,
+  show_datetime DATETIME NOT NULL,
+  price DECIMAL(10,2) NOT NULL DEFAULT 200.00,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+  FOREIGN KEY (screen_id) REFERENCES screens(id) ON DELETE CASCADE,
+  INDEX (show_datetime)
+) ENGINE=InnoDB;
+
+-- Bookings
+CREATE TABLE bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  show_id INT NOT NULL,
+  total_amount DECIMAL(10,2) NOT NULL,
+  status ENUM('CONFIRMED','CANCELLED') DEFAULT 'CONFIRMED',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (show_id) REFERENCES shows(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seats booked per booking
+CREATE TABLE booking_seats (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id INT NOT NULL,
+  show_id INT NOT NULL,
+  seat_id INT NOT NULL,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+  FOREIGN KEY (show_id) REFERENCES shows(id) ON DELETE CASCADE,
+  FOREIGN KEY (seat_id) REFERENCES seats(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_reservation (show_id, seat_id)
+) ENGINE=InnoDB;
+
+-- Mock payments
+CREATE TABLE payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id INT NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  method VARCHAR(30) DEFAULT 'COD',
+  status ENUM('SUCCESS','FAILED') DEFAULT 'SUCCESS',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed: admin user (email: admin@example.com, password: admin123)
+INSERT INTO admin_users (email, password_hash)
+VALUES (
+  'admin@example.com',
+  '$2y$10$1Er0cNnOLkDdyD5z3Bwd2e2Z7rZ0qoR6mHhR4s5gQm8h3t9i9yWwa'
+)
+ON DUPLICATE KEY UPDATE email=email;
+
+-- Seed: sample screen (Screen 1 with 6x10 seats)
+INSERT INTO screens (id, name, total_rows, total_cols) VALUES (1, 'Screen 1', 6, 10)
+ON DUPLICATE KEY UPDATE name=VALUES(name), total_rows=VALUES(total_rows), total_cols=VALUES(total_cols);
+
+-- Generate seats for Screen 1
+DELIMITER //
+CREATE PROCEDURE seed_seats_screen1()
+BEGIN
+  DECLARE r INT DEFAULT 0;
+  DECLARE c INT;
+  DECLARE rowchar CHAR(1);
+  IF (SELECT COUNT(*) FROM seats WHERE screen_id=1) = 0 THEN
+    SET r = 0;
+    WHILE r < 6 DO
+      SET rowchar = CHAR(65 + r); -- 'A'..
+      SET c = 1;
+      WHILE c <= 10 DO
+        INSERT INTO seats (screen_id, seat_row, seat_col) VALUES (1, rowchar, c);
+        SET c = c + 1;
+      END WHILE;
+      SET r = r + 1;
+    END WHILE;
+  END IF;
+END//
+DELIMITER ;
+CALL seed_seats_screen1();
+DROP PROCEDURE IF EXISTS seed_seats_screen1;
+
+-- Seed: demo movies
+INSERT INTO movies (title, description, language, genre, duration_mins, rating, poster_url)
+VALUES
+('The Space Journey', 'An inspiring sci-fi adventure among the stars.', 'English', 'Sci-Fi', 130, 'UA', 'https://picsum.photos/seed/space/400/600'),
+('Family Fun', 'A warm comedy for all ages.', 'Hindi', 'Comedy', 115, 'U', 'https://picsum.photos/seed/family/400/600')
+ON DUPLICATE KEY UPDATE title=VALUES(title);
+
+-- Seed: demo shows
+INSERT INTO shows (movie_id, screen_id, show_datetime, price)
+SELECT m.id, 1, DATE_ADD(CURDATE(), INTERVAL 18 HOUR), 220.00 FROM movies m WHERE m.title='The Space Journey'
+ON DUPLICATE KEY UPDATE show_datetime=VALUES(show_datetime);
+
+INSERT INTO shows (movie_id, screen_id, show_datetime, price)
+SELECT m.id, 1, DATE_ADD(CURDATE(), INTERVAL 42 HOUR), 200.00 FROM movies m WHERE m.title='Family Fun'
+ON DUPLICATE KEY UPDATE show_datetime=VALUES(show_datetime);
