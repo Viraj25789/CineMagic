@@ -14,6 +14,17 @@ $price = (float)$show['price'];
 
 // Validate the submitted seat IDs against this show's screen. Never trust
 // hidden form fields: a modified request must not reserve seats in another screen.
+$validSeatInput = true;
+foreach ($seat_ids as $submittedSeatId) {
+  if (!is_scalar($submittedSeatId) || !ctype_digit((string)$submittedSeatId) || (int)$submittedSeatId < 1) {
+    $validSeatInput = false;
+    break;
+  }
+}
+if (!$validSeatInput) {
+  http_response_code(400);
+  exit('Invalid seat selection.');
+}
 $seatIds = array_map('intval', $seat_ids);
 if (count($seatIds) !== count(array_unique($seatIds)) || in_array(0, $seatIds, true)) {
   http_response_code(400);
