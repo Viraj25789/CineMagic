@@ -154,7 +154,7 @@ ob_start();
       <span>CineMagic Admin</span>
     </a>
 
-    <a class="btn btn-outline-secondary bi bi-lock me-2" href="admin_logout.php"> Logout </a>
+    <form method="post" action="admin_logout.php" class="d-inline"><?php csrf_field(); ?><button class="btn btn-outline-secondary bi bi-lock me-2"> Logout </button></form>
     
   </div>
 </nav>
