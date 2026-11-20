@@ -27,13 +27,18 @@ foreach($seats_labels as $lbl){
   }
 }
 
-if(count($seat_ids) == 0){
-  echo "<div class='alert alert-danger'>Selected seats are invalid.</div>"; include 'footer.php'; exit;
+if(count($seat_ids) == 0 || count($seat_ids) !== count($seats_labels) || count($seat_ids) !== count(array_unique($seat_ids))){
+  http_response_code(400);
+  echo "<div class='alert alert-danger'>One or more selected seats are invalid or duplicated.</div>"; include 'footer.php'; exit;
 }
 
 $qty = count($seat_ids);
 $price = (float)$show['price'];
-$amount = $qty * $price;
+$premium_qty = count(array_filter($seats_labels, function($label) {
+  return in_array(strtoupper(substr(trim($label), 0, 1)), ['A', 'B'], true);
+}));
+$standard_qty = $qty - $premium_qty;
+$amount = ($standard_qty * $price) + ($premium_qty * $price * 1.5);
 ?>
 
 <div class="row justify-content-center">
@@ -63,8 +68,12 @@ $amount = $qty * $price;
             <h5>Payment Summary</h5>
             <div class="border rounded p-3">
               <div class="d-flex justify-content-between mb-2">
-                <span>Tickets (<?= $qty; ?>):</span>
-                <span>₹<?= number_format($price,2); ?> each</span>
+                <span>Standard seats (<?= $standard_qty; ?>):</span>
+                <span>₹<?= number_format($standard_qty * $price,2); ?></span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Front seats (<?= $premium_qty; ?>):</span>
+                <span>₹<?= number_format($premium_qty * $price * 1.5,2); ?></span>
               </div>
               <hr>
               <div class="d-flex justify-content-between fw-bold fs-5">
