@@ -12,7 +12,7 @@ function csrf_field() {
 }
 function check_csrf() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (empty($_POST['csrf']) || $_POST['csrf'] !== ($_SESSION['csrf'] ?? '')) {
+        if (empty($_POST['csrf']) || !hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'])) {
             http_response_code(403);
             die("Invalid CSRF token");
         }
