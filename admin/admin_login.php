@@ -66,7 +66,7 @@ require_once __DIR__."/../helpers.php"; check_csrf(); ?>
         </form>
 
         <div class="text-center mt-4">
-          <p class="mb-3">Forgot Password?<a href="forgot_password.php" class="text-decoration-none"> Change Here </a></p>
+          <p class="mb-3 text-muted small">To change your password, sign in first and use the password settings page.</p>
           <p class="mb-0"><a href="../index.php" class="btn btn-secondary w-50 btn-lg"> Home </a></p>
         </div>
       </div>
