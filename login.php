@@ -11,6 +11,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!$user || !password_verify($pass, $user['password_hash'])){
     $errors[]="Invalid credentials";
   } else {
+    session_regenerate_id(true);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['user_name'] = $user['name'];
     header("Location: index.php"); exit;
