@@ -1,0 +1,27 @@
+name: CineMagic PHP Lint
+
+on:
+  push:
+    paths:
+      - "**.php"
+      - ".github/workflows/cinemagic-php-lint.yml"
+  pull_request:
+    paths:
+      - "**.php"
+      - ".github/workflows/cinemagic-php-lint.yml"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: none
+      - name: Lint every PHP file
+        run: |
+          find . -type f -name "*.php" -print0 | xargs -0 -n1 php -l
