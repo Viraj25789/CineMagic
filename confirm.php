@@ -63,10 +63,11 @@ try {
 
 } catch (Throwable $e) {
   $mysqli->rollback();
-  if($mysqli->errno == 1062){
+  error_log('CineMagic booking confirmation failed: ' . $e->getMessage());
+  if($e instanceof mysqli_sql_exception && (int)$e->getCode() === 1062){
     echo "<div class='alert alert-danger'>One or more seats were just booked by someone else. Please pick different seats.</div><a href='select_seats.php?show_id=".$show_id."' class='btn btn-secondary mt-3'>Back</a>";
   } else {
-    echo "<div class='alert alert-danger'>Failed to confirm booking. ".$mysqli->error."</div>";
+    echo "<div class='alert alert-danger'>Booking could not be confirmed. Please try again.</div>";
   }
 }
 include 'footer.php';
