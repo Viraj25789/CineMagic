@@ -42,7 +42,7 @@ require_once __DIR__."/../helpers.php"; check_csrf(); ?>
           $stmt->bind_param("s",$email); $stmt->execute();
           $a = $stmt->get_result()->fetch_assoc();
           if(!$a || !password_verify($pass, $a['password_hash'])){ $errors[]="Invalid credentials"; }
-          else { $_SESSION['admin_id']=$a['id']; header("Location:dashboard.php"); exit; }
+          else { session_regenerate_id(true); $_SESSION['admin_id']=$a['id']; header("Location:dashboard.php"); exit; }
         }
         foreach($errors as $e){ echo "<div class='alert alert-danger'>".htmlspecialchars($e)."</div>"; }
         ?>
