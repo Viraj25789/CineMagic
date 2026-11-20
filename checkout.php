@@ -17,7 +17,12 @@ if(!$show){ echo "<div class='alert alert-danger'>Invalid show.</div>"; include 
 // Map seat labels to seat IDs safely (one query per seat - simple and reliable)
 $seat_ids = [];
 $stmtSeat = $mysqli->prepare("SELECT id FROM seats WHERE seat_label=? AND screen_id=?");
+$invalidSeatInput = false;
 foreach($seats_labels as $lbl){
+  if (!is_string($lbl) || !preg_match('/^[A-Z][0-9]{1,2}$/i', trim($lbl))) {
+    $invalidSeatInput = true;
+    break;
+  }
   $label = strtoupper(trim($lbl));
   $stmtSeat->bind_param("si", $label, $show['screen_id']);
   $stmtSeat->execute();
@@ -27,7 +32,7 @@ foreach($seats_labels as $lbl){
   }
 }
 
-if(count($seat_ids) == 0 || count($seat_ids) !== count($seats_labels) || count($seat_ids) !== count(array_unique($seat_ids))){
+if($invalidSeatInput || count($seat_ids) == 0 || count($seat_ids) !== count($seats_labels) || count($seat_ids) !== count(array_unique($seat_ids))){
   http_response_code(400);
   echo "<div class='alert alert-danger'>One or more selected seats are invalid or duplicated.</div>"; include 'footer.php'; exit;
 }
