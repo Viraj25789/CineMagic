@@ -6,12 +6,34 @@ $seat_ids = $_POST['seat_ids'] ?? [];
 if(!$show_id || !is_array($seat_ids) || count($seat_ids)==0){ echo "<div class='alert alert-danger'>Invalid request.</div>"; include 'footer.php'; exit; }
 
 // Get price
-$stmt = $mysqli->prepare("SELECT price FROM shows WHERE id=?");
+$stmt = $mysqli->prepare("SELECT price, screen_id FROM shows WHERE id=?");
 $stmt->bind_param("i",$show_id); $stmt->execute();
 $show = $stmt->get_result()->fetch_assoc();
 if(!$show){ echo "<div class='alert alert-danger'>Show not found.</div>"; include 'footer.php'; exit; }
 $price = (float)$show['price'];
-$total = $price * count($seat_ids);
+
+// Validate the submitted seat IDs against this show's screen. Never trust
+// hidden form fields: a modified request must not reserve seats in another screen.
+$seatIds = array_map('intval', $seat_ids);
+if (count($seatIds) !== count(array_unique($seatIds)) || in_array(0, $seatIds, true)) {
+  http_response_code(400);
+  exit('Invalid seat selection.');
+}
+$seatCheck = $mysqli->prepare("SELECT seat_row FROM seats WHERE id=? AND screen_id=?");
+$total = 0.0;
+foreach ($seatIds as $seatId) {
+  $screenId = (int)$show['screen_id'];
+  $seatCheck->bind_param("ii", $seatId, $screenId);
+  $seatCheck->execute();
+  $seat = $seatCheck->get_result()->fetch_assoc();
+  if (!$seat) {
+    http_response_code(400);
+    exit('One or more selected seats are invalid for this show.');
+  }
+  $isFrontRow = in_array($seat['seat_row'], ['A', 'B'], true);
+  $total += $price * ($isFrontRow ? 1.5 : 1.0);
+}
+$seat_ids = $seatIds;
 
 // Transaction: create booking and reserve seats. If any seat already taken, rollback.
 $mysqli->begin_transaction();
