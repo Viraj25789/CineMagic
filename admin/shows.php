@@ -5,8 +5,8 @@ if($action==='add' && $_SERVER['REQUEST_METHOD']==='POST'){
   $stmt->bind_param("iisd", $_POST['movie_id'], $_POST['screen_id'], $_POST['show_datetime'], $_POST['price']);
   $stmt->execute(); header("Location: shows.php"); exit;
 }
-if($action==='delete'){
-  $id=(int)$_GET['id']; $mysqli->query("DELETE FROM shows WHERE id=$id"); header("Location: shows.php"); exit;
+if($action==='delete' && $_SERVER['REQUEST_METHOD']==='POST'){
+  $id=(int)($_POST['id'] ?? 0); $mysqli->query("DELETE FROM shows WHERE id=$id"); header("Location: shows.php"); exit;
 }
 $movies = $mysqli->query("SELECT id, title FROM movies ORDER BY title")->fetch_all(MYSQLI_ASSOC);
 $screens = $mysqli->query("SELECT id, name FROM screens ORDER BY id")->fetch_all(MYSQLI_ASSOC);
@@ -57,7 +57,7 @@ $screens = $mysqli->query("SELECT id, name FROM screens ORDER BY id")->fetch_all
               <td><?= e($row['screen_name']); ?></td>
               <td><?= e($row['show_datetime']); ?></td>
               <td>₹<?= e(number_format($row['price'],2)); ?></td>
-              <td><a class="btn btn-danger btn-sm" href="shows.php?action=delete&id=<?= $row['id']; ?>" onclick="return confirm('Delete this show?')">Delete</a></td>
+              <td><form method="post" action="shows.php?action=delete" class="d-inline" onsubmit="return confirm('Delete this show?')"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= $row['id']; ?>"><button class="btn btn-danger btn-sm">Delete</button></form></td>
             </tr>
           <?php endwhile; ?>
         </tbody>
