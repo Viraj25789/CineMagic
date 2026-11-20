@@ -18,6 +18,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $stmt = $mysqli->prepare("INSERT INTO users (name,email,password_hash) VALUES (?,?,?)");
       $stmt->bind_param("sss",$name,$email,$hash);
       $stmt->execute();
+      session_regenerate_id(true);
       $_SESSION['user_id'] = $stmt->insert_id;
       $_SESSION['user_name'] = $name;
       header("Location: index.php"); exit;
