@@ -15,8 +15,8 @@ if($action==='add' && $_SERVER['REQUEST_METHOD']==='POST'){
   }
   header("Location: screens.php"); exit;
 }
-if($action==='delete'){
-  $id=(int)$_GET['id']; $mysqli->query("DELETE FROM screens WHERE id=$id"); header("Location: screens.php"); exit;
+if($action==='delete' && $_SERVER['REQUEST_METHOD']==='POST'){
+  $id=(int)($_POST['id'] ?? 0); $mysqli->query("DELETE FROM screens WHERE id=$id"); header("Location: screens.php"); exit;
 }
 ?>
 <h3>Screens</h3>
@@ -46,7 +46,7 @@ if($action==='delete'){
               <td><?= e($s['name']); ?></td>
               <td><?= e($s['total_rows']); ?></td>
               <td><?= e($s['total_cols']); ?></td>
-              <td><a class="btn btn-danger btn-sm" href="screens.php?action=delete&id=<?= $s['id']; ?>" onclick="return confirm('Delete this screen?')">Delete</a></td>
+              <td><form method="post" action="screens.php?action=delete" class="d-inline" onsubmit="return confirm('Delete this screen?')"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= $s['id']; ?>"><button class="btn btn-danger btn-sm">Delete</button></form></td>
             </tr>
           <?php endwhile; ?>
         </tbody>
