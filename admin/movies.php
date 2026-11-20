@@ -15,8 +15,8 @@ if($action==='add' && $_SERVER['REQUEST_METHOD']==='POST'){
   }
 }
 
-if($action==='delete'){
-  $id=(int)$_GET['id']; 
+if($action==='delete' && $_SERVER['REQUEST_METHOD']==='POST'){
+  $id=(int)($_POST['id'] ?? 0); 
   $mysqli->query("DELETE FROM movies WHERE id=$id"); 
   header("Location: movies.php"); 
   exit;
@@ -54,7 +54,7 @@ if($action==='delete'){
               <td><?= e($m['title']); ?></td>
               <td><?= e($m['language']); ?></td>
               <td><?= e($m['genre']); ?></td>
-              <td><a class="btn btn-danger btn-sm" href="movies.php?action=delete&id=<?= $m['id']; ?>" onclick="return confirm('Delete this movie?')">Delete</a></td>
+              <td><form method="post" action="movies.php?action=delete" class="d-inline" onsubmit="return confirm('Delete this movie?')"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= $m['id']; ?>"><button class="btn btn-danger btn-sm">Delete</button></form></td>
             </tr>
           <?php endwhile; ?>
         </tbody>
