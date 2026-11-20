@@ -168,7 +168,7 @@ ob_start();
             <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="my_bookings.php">My Bookings</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+              <li><form method="post" action="logout.php" class="px-3 py-1"><?php csrf_field(); ?><button class="dropdown-item px-0">Logout</button></form></li>
             </ul>
           </li>
         <?php else: ?>
